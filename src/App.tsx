@@ -36,21 +36,20 @@ export default function App() {
   const [textScale, setTextScale] = useState(0.28);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Enforce 3-5 products
+  // Enforce 1-6 products
   useEffect(() => {
-    if (products.length < 3) {
-      const needed = 3 - products.length;
-      const newProds = Array.from({ length: needed }).map(() => ({
+    if (products.length < 1) {
+      const newProd = {
         id: Math.random().toString(36).substr(2, 9),
         image: null,
         price: '',
-      }));
-      setProducts(prev => [...prev, ...newProds]);
+      };
+      setProducts([newProd]);
     }
   }, [products]);
 
   const addProduct = () => {
-    if (products.length >= 5) return;
+    if (products.length >= 6) return;
     const newProduct: Product = {
       id: Math.random().toString(36).substr(2, 9),
       image: null,
@@ -60,7 +59,7 @@ export default function App() {
   };
 
   const removeProduct = (id: string) => {
-    if (products.length <= 3) return; // Enforce minimum 3
+    if (products.length <= 1) return;
     setProducts(products.filter(p => p.id !== id));
   };
 
@@ -134,14 +133,25 @@ export default function App() {
       }
 
       // Draw products
-      if (products.length >= 3 && products.length <= 5) {
-        // GRID/TRIANGLE LAYOUT FOR 3-5 PRODUCTS
+      if (products.length >= 1 && products.length <= 6) {
+        // GRID/TRIANGLE LAYOUT FOR 1-6 PRODUCTS
         const startY = canvas.height * 0.12;
         let rowHeight = canvas.height * 0.35;
         let imgSize = (canvas.width * 0.35) * imgScale;
         
         let positions = [];
-        if (products.length === 3) {
+        if (products.length === 1) {
+          rowHeight = canvas.height * 0.5;
+          imgSize = (canvas.width * 0.5) * imgScale;
+          positions = [{ x: canvas.width * 0.5, y: canvas.height * 0.3 }];
+        } else if (products.length === 2) {
+          rowHeight = canvas.height * 0.5;
+          imgSize = (canvas.width * 0.4) * imgScale;
+          positions = [
+            { x: canvas.width * 0.25, y: canvas.height * 0.3 },
+            { x: canvas.width * 0.75, y: canvas.height * 0.3 }
+          ];
+        } else if (products.length === 3) {
           positions = [
             { x: canvas.width * 0.25, y: startY },             // Top Left
             { x: canvas.width * 0.75, y: startY },             // Top Right
@@ -154,7 +164,7 @@ export default function App() {
             { x: canvas.width * 0.25, y: startY + rowHeight }, // Row 2 Left
             { x: canvas.width * 0.75, y: startY + rowHeight }  // Row 2 Right
           ];
-        } else { // 5 products
+        } else if (products.length === 5) {
           rowHeight = canvas.height * 0.28;
           imgSize = (canvas.width * 0.30) * imgScale;
           positions = [
@@ -163,6 +173,17 @@ export default function App() {
             { x: canvas.width * 0.75, y: startY + rowHeight }, // Row 2 Right
             { x: canvas.width * 0.25, y: startY + 2 * rowHeight }, // Row 3 Left
             { x: canvas.width * 0.75, y: startY + 2 * rowHeight }  // Row 3 Right
+          ];
+        } else if (products.length === 6) {
+          rowHeight = canvas.height * 0.28;
+          imgSize = (canvas.width * 0.28) * imgScale;
+          positions = [
+            { x: canvas.width * 0.25, y: startY },
+            { x: canvas.width * 0.75, y: startY },
+            { x: canvas.width * 0.25, y: startY + rowHeight },
+            { x: canvas.width * 0.75, y: startY + rowHeight },
+            { x: canvas.width * 0.25, y: startY + 2 * rowHeight },
+            { x: canvas.width * 0.75, y: startY + 2 * rowHeight }
           ];
         }
 
@@ -401,7 +422,7 @@ export default function App() {
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex flex-col gap-1">
-                <h2 className="text-xs font-bold uppercase tracking-widest text-gray-500">2. Products (3-5 required)</h2>
+                <h2 className="text-xs font-bold uppercase tracking-widest text-gray-500">2. Products (1-6 required)</h2>
                 <p className="text-[10px] text-gray-600">Select multiple images to auto-fill</p>
               </div>
               <div className="flex items-center gap-2">
@@ -413,7 +434,7 @@ export default function App() {
                     accept="image/*" 
                     className="hidden" 
                     onChange={(e) => {
-                      const files = Array.from(e.target.files || []).slice(0, 5);
+                      const files = Array.from(e.target.files || []).slice(0, 6);
                       if (files.length === 0) return;
                       
                       const readers = files.map(file => {
@@ -425,7 +446,7 @@ export default function App() {
                       });
 
                       Promise.all(readers).then(images => {
-                        const count = Math.max(3, images.length);
+                        const count = images.length;
                         const newProducts = Array.from({ length: count }).map((_, i) => ({
                           id: Math.random().toString(36).substr(2, 9),
                           image: images[i] || null,
@@ -438,7 +459,7 @@ export default function App() {
                 </label>
                 <button 
                   onClick={addProduct}
-                  disabled={products.length >= 5}
+                  disabled={products.length >= 6}
                   className="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-1 rounded flex items-center gap-1 font-bold uppercase transition-colors disabled:opacity-30"
                 >
                   <Plus className="w-3 h-3" /> Add Slot
