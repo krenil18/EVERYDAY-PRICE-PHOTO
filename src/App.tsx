@@ -24,6 +24,7 @@ import {
 interface Product {
   id: string;
   image: string | null;
+  sku: string;
   price: string;
 }
 
@@ -31,6 +32,8 @@ export default function App() {
   const [background, setBackground] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [displayDate, setDisplayDate] = useState<string>('12/05/26');
+  const [headerInfo, setHeaderInfo] = useState<string>('18KT GOLD\nEF-VVS NATURAL DIAMONDS');
+  const [footerText, setFooterText] = useState<string>('ORDER NOW (WHATSAPP) - +91 92741 41318');
   const [isGenerating, setIsGenerating] = useState(false);
   const [imgScale, setImgScale] = useState(1.0);
   const [textScale, setTextScale] = useState(0.28);
@@ -42,6 +45,7 @@ export default function App() {
       const newProd = {
         id: Math.random().toString(36).substr(2, 9),
         image: null,
+        sku: '',
         price: '',
       };
       setProducts([newProd]);
@@ -53,6 +57,7 @@ export default function App() {
     const newProduct: Product = {
       id: Math.random().toString(36).substr(2, 9),
       image: null,
+      sku: '',
       price: '',
     };
     setProducts([...products, newProduct]);
@@ -129,6 +134,42 @@ export default function App() {
         ctx.moveTo(canvas.width - datePaddingX - textWidth, datePaddingY + dateFontSize + 15);
         ctx.lineTo(canvas.width - datePaddingX, datePaddingY + dateFontSize + 15);
         ctx.stroke();
+        ctx.restore();
+      }
+
+      // Draw Header Info in Upper Left
+      if (headerInfo) {
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        const infoFontSize = Math.floor(canvas.height * 0.022);
+        ctx.font = `bold ${infoFontSize}px Inter, sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        
+        const infoPaddingX = canvas.width * 0.05;
+        const infoPaddingY = canvas.height * 0.03;
+        
+        const lines = headerInfo.split('\n');
+        lines.forEach((line, index) => {
+          ctx.fillText(line.trim(), infoPaddingX, infoPaddingY + (index * infoFontSize * 1.3));
+        });
+        ctx.restore();
+      }
+
+      // Draw Footer Text at Bottom Center
+      if (footerText) {
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        const footerFontSize = Math.floor(canvas.height * 0.025);
+        ctx.font = `bold ${footerFontSize}px Inter, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        
+        const footerPaddingY = canvas.height * 0.05;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        
+        ctx.fillText(footerText, canvas.width / 2, canvas.height - footerPaddingY);
         ctx.restore();
       }
 
@@ -223,7 +264,7 @@ export default function App() {
             ctx.restore();
           }
 
-          if (product.price) {
+          if (product.price || product.sku) {
             ctx.save();
             ctx.fillStyle = '#ffffff';
             const calculatedFontSize = Math.floor(rowHeight * textScale * 0.8);
@@ -234,7 +275,15 @@ export default function App() {
             ctx.shadowBlur = 12;
             ctx.shadowColor = 'rgba(0,0,0,0.6)';
             
-            ctx.fillText(product.price, centerX, imgY + imgSize + (canvas.height * 0.02));
+            const textY = imgY + imgSize + (canvas.height * 0.02);
+            if (product.sku && product.price) {
+              ctx.fillText(product.sku, centerX, textY);
+              ctx.fillText(product.price, centerX, textY + calculatedFontSize * 1.2);
+            } else if (product.sku) {
+              ctx.fillText(product.sku, centerX, textY);
+            } else {
+              ctx.fillText(product.price, centerX, textY);
+            }
             ctx.restore();
           }
         }
@@ -281,7 +330,7 @@ export default function App() {
             ctx.restore();
           }
 
-          if (product.price) {
+          if (product.price || product.sku) {
             ctx.save();
             ctx.fillStyle = '#ffffff';
             const calculatedFontSize = Math.floor(productHeight * textScale);
@@ -293,7 +342,14 @@ export default function App() {
             ctx.shadowBlur = 12;
             ctx.shadowColor = 'rgba(0,0,0,0.6)';
             
-            ctx.fillText(`- ${product.price}`, textX, rowY + productHeight / 2);
+            if (product.sku && product.price) {
+              ctx.fillText(product.sku, textX, rowY + productHeight / 2 - calculatedFontSize * 0.6);
+              ctx.fillText(`- ${product.price}`, textX, rowY + productHeight / 2 + calculatedFontSize * 0.6);
+            } else if (product.sku) {
+              ctx.fillText(product.sku, textX, rowY + productHeight / 2);
+            } else {
+              ctx.fillText(`- ${product.price}`, textX, rowY + productHeight / 2);
+            }
             ctx.restore();
           }
         }
@@ -319,7 +375,7 @@ export default function App() {
       drawOnCanvas();
     }, 500);
     return () => clearTimeout(timer);
-  }, [background, products, displayDate, imgScale, textScale]);
+  }, [background, products, displayDate, headerInfo, footerText, imgScale, textScale]);
 
   return (
     <div className="min-h-screen bg-[#070709] text-gray-200 font-sans selection:bg-blue-500/30">
@@ -354,8 +410,8 @@ export default function App() {
             </div>
             <label className="group relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-white/10 hover:border-blue-500/50 rounded-2xl bg-white/5 hover:bg-blue-500/5 transition-all cursor-pointer overflow-hidden">
               {background ? (
-                <div className="absolute inset-0">
-                  <img src={background} alt="Background preview" className="w-full h-full object-cover opacity-60" />
+                <div className="absolute inset-0 p-2">
+                  <img src={background} alt="Background preview" className="w-full h-full object-contain" />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
                     <RefreshCcw className="w-6 h-6 text-white" />
                   </div>
@@ -376,12 +432,32 @@ export default function App() {
             <h2 className="text-xs font-bold uppercase tracking-widest text-gray-500">Layout & Details</h2>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase">Displayed Date</label>
+                <label className="text-[10px] font-bold text-gray-400 uppercase">Header Info (Left Top)</label>
+                <textarea 
+                  value={headerInfo}
+                  onChange={(e) => setHeaderInfo(e.target.value)}
+                  placeholder="e.g. 18KT GOLD..."
+                  rows={2}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white resize-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-gray-400 uppercase">Displayed Date (Right)</label>
                 <input 
                   type="text" 
                   value={displayDate}
                   onChange={(e) => setDisplayDate(e.target.value)}
                   placeholder="e.g. 12/05/26"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-gray-400 uppercase">Footer Text (Bottom Center)</label>
+                <input 
+                  type="text" 
+                  value={footerText}
+                  onChange={(e) => setFooterText(e.target.value)}
+                  placeholder="e.g. ORDER NOW..."
                   className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white"
                 />
               </div>
@@ -450,6 +526,7 @@ export default function App() {
                         const newProducts = Array.from({ length: count }).map((_, i) => ({
                           id: Math.random().toString(36).substr(2, 9),
                           image: images[i] || null,
+                          sku: products[i]?.sku || '',
                           price: products[i]?.price || '',
                         }));
                         setProducts(newProducts);
@@ -502,13 +579,22 @@ export default function App() {
                             </button>
                           )}
                         </div>
-                        <input 
-                          type="text"
-                          placeholder="Price Value"
-                          value={product.price}
-                          onChange={(e) => updateProduct(product.id, { price: e.target.value })}
-                          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 text-white placeholder:text-gray-700 font-mono tracking-tight"
-                        />
+                        <div className="space-y-1.5 flex-1">
+                          <input 
+                            type="text"
+                            placeholder="SKU Code"
+                            value={product.sku}
+                            onChange={(e) => updateProduct(product.id, { sku: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-blue-500 text-white placeholder:text-gray-700 font-mono tracking-tight"
+                          />
+                          <input 
+                            type="text"
+                            placeholder="Price Value"
+                            value={product.price}
+                            onChange={(e) => updateProduct(product.id, { price: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 text-white placeholder:text-gray-700 font-mono tracking-tight"
+                          />
+                        </div>
                       </div>
                     </div>
                   </motion.div>
@@ -539,48 +625,36 @@ export default function App() {
             )}
           </div>
           
-          <div className="aspect-[4/5] lg:aspect-auto min-h-[500px] w-full bg-[#0d0d0f] border border-white/5 rounded-3xl overflow-hidden shadow-2xl relative group">
-            <div className="absolute inset-0 flex items-center justify-center p-8 overflow-auto">
-              {/* The Actual Canvas (Invisible) */}
-              <canvas ref={canvasRef} className="hidden" />
-              
-              {/* Display Version (Scaled to container) */}
-              {background ? (
-                <div className="relative shadow-2xl transition-transform duration-500 group-hover:scale-[1.01]">
-                  <canvas 
-                    width={canvasRef.current?.width || 1080}
-                    height={canvasRef.current?.height || 1350}
-                    style={{
-                      maxWidth: '100%',
-                      maxHeight: 'calc(100vh - 200px)',
-                      width: 'auto',
-                      height: 'auto',
-                      objectFit: 'contain'
-                    }}
-                    ref={(el) => {
-                      if (el && canvasRef.current) {
-                        const ctx = el.getContext('2d');
-                        if (ctx) {
-                          ctx.clearRect(0,0,el.width, el.height);
-                          ctx.drawImage(canvasRef.current, 0, 0);
-                        }
-                      }
-                    }}
-                  />
-                  <div className="absolute inset-0 border border-white/10 pointer-events-none rounded-sm"></div>
+          <div className="aspect-[4/5] lg:aspect-auto min-h-[500px] w-full bg-[#0d0d0f] border border-white/5 rounded-3xl overflow-hidden shadow-2xl relative group flex items-center justify-center">
+            {background ? (
+              <div className="relative shadow-2xl transition-transform duration-500 group-hover:scale-[1.01] p-8 max-h-full max-w-full flex items-center justify-center">
+                <canvas 
+                  ref={canvasRef}
+                  width={1080}
+                  height={1350}
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: 'calc(100vh - 200px)',
+                    width: 'auto',
+                    height: 'auto',
+                    objectFit: 'contain',
+                    backgroundColor: '#000'
+                  }}
+                />
+                <div className="absolute inset-8 border border-white/10 pointer-events-none rounded-sm"></div>
+              </div>
+            ) : (
+              <div className="text-center space-y-4 max-w-sm">
+                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <ImageIcon className="w-10 h-10 text-gray-600" />
                 </div>
-              ) : (
-                <div className="text-center space-y-4 max-w-sm">
-                  <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <ImageIcon className="w-10 h-10 text-gray-600" />
-                  </div>
-                  <h3 className="text-white font-bold">No Image Background</h3>
-                  <p className="text-sm text-gray-500">
-                    Please upload a background image on the left sidebar to start creating your product sheet.
-                  </p>
-                </div>
-              )}
-            </div>
+                <h3 className="text-white font-bold">No Image Background</h3>
+                <p className="text-sm text-gray-500">
+                  Please upload a background image on the left sidebar to start creating your product sheet.
+                </p>
+                <canvas ref={canvasRef} className="hidden" />
+              </div>
+            )}
 
             {/* Canvas overlay labels */}
             {background && (
